@@ -1,0 +1,16 @@
+node_modules
+# Keep environment variables out of version control
+.env
+# Ignore Prisma generated files
+/prisma/generated
+
+.vscode
+
+
+# Ignore Prisma migration branch files
+/prisma/migrations/20231130163344_branch_abel_migrate
+
+
+public/images/*
+public/uploads/*
+

@@ -1,0 +1,239 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres:ilzam3003@localhost:5432/e-commerce"
+}
+
+// User Table
+model User {
+  user_id         Int      @id @default(autoincrement())
+  full_name       String
+  password        String
+  email           String
+  affiliate_code  String
+  affiliate_usage Boolean
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relationships
+  user_promo_usages   UserPromoUsage[]
+  shopping_carts      ShoppingCart[]
+  orders              Orders[]
+  affiliate_discounts AffiliateDiscount[]
+  user_addresses      UserAddress[]
+}
+
+// Products Table
+model Product {
+  product_id   Int      @id @default(autoincrement())
+  name         String
+  description  String
+  price        Decimal
+  stock        Int
+  is_available Boolean
+  category_id  Int
+  warehouse_id Int
+  image        String
+  weight       Decimal
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  // Relationships
+  category         Category           @relation(fields: [category_id], references: [category_id])
+  warehouse        Warehouse          @relation(fields: [warehouse_id], references: [warehouse_id])
+  promotions       Promotion[]
+  order_items      OrderItem[]
+  ShoppingCart     ShoppingCart[]
+  ShoppingCartItem ShoppingCartItem[]
+}
+
+// AffiliateDiscount Model
+model AffiliateDiscount {
+  affiliate_discount_id Int      @id @default(autoincrement())
+  user_id               Int
+  discount_amount       Decimal
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  // Relationships
+  user User @relation(fields: [user_id], references: [user_id])
+}
+
+// Category Model
+model Category {
+  category_id   Int      @id @default(autoincrement())
+  category_name String   @unique
+  deleted       Boolean  @default(false)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relationships
+  products Product[]
+}
+
+// Admin Model
+model Admin {
+  admin_id        Int               @id @default(autoincrement())
+  username        String
+  password        String
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+  Promotion       Promotion[]
+  Orders          Orders[]
+  ProofsOfPayment ProofsOfPayment[]
+  Warehouse       Warehouse[]
+}
+
+// Promotions Table
+model Promotion {
+  promo_id        Int     @id @default(autoincrement())
+  type            String
+  maximum_usage   Int
+  amount          Decimal
+  remaining_usage Int
+  admin_id        Int
+  product_id      Int?
+  promo_code      String? 
+
+  // Relationships
+  admin          Admin            @relation(fields: [admin_id], references: [admin_id])
+  product        Product?         @relation(fields: [product_id], references: [product_id])
+  UserPromoUsage UserPromoUsage[]
+}
+
+// User Promo Usage Table
+model UserPromoUsage {
+  user_promo_usage_id Int  @id @default(autoincrement())
+  user_id             Int
+  promo_id            Int
+  usage_count         Int
+  order_id            Int?
+
+  // Relationships
+  user  User      @relation(fields: [user_id], references: [user_id])
+  promo Promotion @relation(fields: [promo_id], references: [promo_id])
+  order Orders?   @relation(fields: [order_id], references: [order_id])
+}
+
+// Shopping Cart Items Table
+model ShoppingCartItem {
+  cart_item_id Int      @id @default(autoincrement())
+  cart_id      Int
+  product_id   Int
+  quantity     Int
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  // Relationships
+  cart    ShoppingCart @relation(fields: [cart_id], references: [cart_id])
+  product Product      @relation(fields: [product_id], references: [product_id])
+}
+
+// Shopping Cart Table
+model ShoppingCart {
+  cart_id    Int      @id @default(autoincrement())
+  user_id    Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relationships
+  user              User               @relation(fields: [user_id], references: [user_id])
+  cart_items        ShoppingCartItem[]
+  Product           Product?           @relation(fields: [productProduct_id], references: [product_id])
+  productProduct_id Int?
+}
+
+// Orders Table
+model Orders {
+  order_id               Int      @id @default(autoincrement())
+  user_id                Int
+  order_date             DateTime
+  delivery_time          DateTime
+  deliver_fee            Decimal
+  total_price            Decimal
+  payment_status         String
+  order_status           String
+  admin_id               Int
+  promo_code             String?
+  promo_discount_amount  Decimal? 
+  affiliate_discount_amount Float @default(0.0)
+
+
+  // Relationships
+  user                   User              @relation(fields: [user_id], references: [user_id])
+  admin                  Admin             @relation(fields: [admin_id], references: [admin_id])
+  order_items            OrderItem[]
+  UserPromoUsage         UserPromoUsage[]
+  ProofsOfPayment        ProofsOfPayment[]
+}
+
+
+// Order Items Table
+model OrderItem {
+  order_item_id Int      @id @default(autoincrement())
+  product_id    Int
+  quantity      Int
+  price         Decimal
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relationships
+  product        Product @relation(fields: [product_id], references: [product_id])
+  orders         Orders? @relation(fields: [ordersOrder_id], references: [order_id])
+  ordersOrder_id Int?
+}
+
+// Proofs of Payment Table
+model ProofsOfPayment {
+  proof_of_payment_id Int     @id @default(autoincrement())
+  order_id            Int
+  image               String
+  payment_status      Boolean
+  promo_usage_updated Boolean
+  admin_id            Int?
+
+  // Relationships
+  order Orders @relation(fields: [order_id], references: [order_id])
+  admin Admin? @relation(fields: [admin_id], references: [admin_id])
+}
+
+// Warehouse Table
+model Warehouse {
+  warehouse_id  Int    @id @default(autoincrement())
+  warehouse_name String
+  province_id   Int
+  province_name String
+  city_id       Int
+  city_name     String
+  postal_code   Int
+  admin_id      Int
+  deleted       Boolean   @default(false)
+
+  // Relationships
+  admin      Admin     @relation(fields: [admin_id], references: [admin_id])
+  products   Product[]
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+}
+
+// User Address Table
+model UserAddress {
+  user_address_id Int      @id @default(autoincrement())
+  user_id         Int
+  province_id     Int
+  province_name   String
+  city_id         Int
+  city_name       String
+  postal_code     Int
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relationships
+  user User @relation(fields: [user_id], references: [user_id])
+}
